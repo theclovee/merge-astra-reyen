@@ -31,14 +31,19 @@
       border-radius: 15px; font-size: 12px; cursor: pointer; font-weight: bold;
     }
 
-    /* Top Stats Bar */
+    /* Top Stats & Gallery Bar */
     .stats-bar {
-      width: 100%; max-width: 380px; display: flex;
-      justify-content: space-around; background: var(--card);
-      padding: 8px 10px; border-radius: 16px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 8px;
+      width: 100%; max-width: 380px; display: flex; flex-direction: column;
+      background: var(--card); padding: 8px 12px; border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 8px; gap: 6px;
     }
+    .stats-row { display: flex; justify-content: space-between; align-items: center; }
     .stat { font-weight: bold; font-size: 12px; display: flex; align-items: center; gap: 4px; }
+    .btn-gallery {
+      background: #8e44ad; color: white; border: none; padding: 6px 12px;
+      border-radius: 10px; font-weight: bold; font-size: 11px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
 
     /* Orders Area */
     .orders-container {
@@ -54,7 +59,6 @@
     }
     .order-card.angel { background: #fffde7; border-color: #fbc02d; }
     
-    /* NPC Profile & Bubble Chat */
     .npc-profile {
       width: 44px; height: 44px; border-radius: 50%;
       border: 2px solid #8e44ad; overflow: hidden;
@@ -82,7 +86,7 @@
       flex-shrink: 0;
     }
 
-    /* Board Area */
+    /* Board Area & Dragging Visuals */
     .board-container {
       display: grid; gap: 4px; background: #dcd0c0;
       padding: 6px; border-radius: 14px;
@@ -91,12 +95,23 @@
     .tile {
       width: 44px; height: 44px; background: #fcfbfa;
       border-radius: 8px; display: flex; align-items: center;
-      justify-content: center; font-size: 22px; cursor: pointer;
-      position: relative; border: 2px solid transparent;
+      justify-content: center; font-size: 22px; cursor: grab;
+      position: relative; border: 2px solid transparent; transition: transform 0.1s;
     }
+    .tile:active { cursor: grabbing; }
     .tile.selected { border-color: var(--primary) !important; background: #f0e6fa; }
     .tile.generator { background: #fff8e1; border-color: #f39c12; }
     .tile.gift { background: #e8f8f5; border: 2px dashed #1abc9c; animation: pulse 1.5s infinite; }
+    
+    /* Dragging Element */
+    .dragging-item {
+      position: fixed; pointer-events: none; z-index: 1000;
+      width: 44px; height: 44px; font-size: 24px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255, 255, 255, 0.9); border-radius: 8px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25); border: 2px solid var(--primary);
+      transform: translate(-50%, -50%) scale(1.15); opacity: 0.85;
+    }
 
     @keyframes pulse {
       0% { transform: scale(1); }
@@ -122,22 +137,40 @@
     }
     .modal-card {
       background: white; padding: 20px; border-radius: 18px; text-align: center;
-      max-width: 300px; width: 90%; display: flex; flex-direction: column; align-items: center; gap: 12px;
+      max-width: 320px; width: 90%; display: flex; flex-direction: column; align-items: center; gap: 12px;
+      max-height: 85vh; overflow-y: auto;
     }
     .stamp-badge {
-      width: 130px; height: 130px; border-radius: 50%;
+      width: 120px; height: 120px; border-radius: 50%;
       border: 6px double #f1c40f; background: #fffdf5;
       box-shadow: 0 0 20px rgba(241, 196, 15, 0.6);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       animation: stampAnim 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    .stamp-icon { font-size: 44px; }
+    .stamp-icon { font-size: 40px; }
     .stamp-title { font-size: 11px; font-weight: bold; color: #d35400; text-align: center; margin-top: 4px; padding: 0 4px; }
     
     @keyframes stampAnim {
       0% { transform: scale(3); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
     }
+
+    /* Galeri Stempel Modal Grid */
+    .gallery-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%;
+      margin-top: 8px;
+    }
+    .badge-item {
+      background: #faf8f5; border: 1px solid #e8e2d9; border-radius: 10px;
+      padding: 6px 4px; display: flex; flex-direction: column; align-items: center;
+      font-size: 10px; color: #7f8c8d; text-align: center;
+    }
+    .badge-item.unlocked {
+      background: #fff8e1; border-color: #f1c40f; color: #d35400; font-weight: bold;
+      box-shadow: 0 2px 5px rgba(241, 196, 15, 0.3);
+    }
+    .badge-item-icon { font-size: 22px; margin-bottom: 2px; }
+
     .btn-close {
       background: var(--primary); color: white; border: none;
       padding: 8px 18px; border-radius: 10px; font-weight: bold; cursor: pointer;
@@ -152,9 +185,12 @@
   </header>
 
   <div class="stats-bar">
-    <div class="stat">🎖️ Lv: <span id="val-level">1</span>/22</div>
-    <div class="stat">✨ XP: <span id="val-xp">0</span>/<span id="val-max-xp">30</span></div>
-    <div class="stat">⚡ Energi: <span id="val-energy">100</span>/100</div>
+    <div class="stats-row">
+      <div class="stat">🎖️️ Lv: <span id="val-level">1</span>/22</div>
+      <div class="stat">✨ XP: <span id="val-xp">0</span>/<span id="val-max-xp">30</span></div>
+      <div class="stat">⚡ Energi: <span id="val-energy">100</span>/100</div>
+    </div>
+    <button class="btn-gallery" onclick="openGalleryModal()">📜 Galeri Stempel Lencana</button>
   </div>
 
   <div class="orders-container">
@@ -168,7 +204,7 @@
     <button id="btn-delete" class="btn-delete" onclick="deleteSelectedItem()">🗑️ Hapus Item</button>
   </div>
 
-  <!-- POPUP STEMPEL LENCANA -->
+  <!-- POPUP STEMPEL LENCANA NAIK LEVEL -->
   <div id="badge-modal" class="modal-overlay">
     <div class="modal-card">
       <h3 style="margin: 0; color: #2c3e50;">✨ NAIK LEVEL! ✨</h3>
@@ -178,6 +214,16 @@
       </div>
       <p id="badge-desc" style="font-size: 11px; color: #7f8c8d; margin: 0;"></p>
       <button class="btn-close" onclick="closeBadgeModal()">Lanjutkan</button>
+    </div>
+  </div>
+
+  <!-- POPUP GALERI STEMPEL LENCANA -->
+  <div id="gallery-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="margin: 0; color: #2c3e50;">📜 Koleksi Stempel Lencana</h3>
+      <small id="gallery-progress" style="color: #8e44ad; font-weight: bold;">0/22 Terkumpul</small>
+      <div id="gallery-list" class="gallery-grid"></div>
+      <button class="btn-close" onclick="closeGalleryModal()">Tutup</button>
     </div>
   </div>
 
@@ -191,6 +237,9 @@
       <button class="btn-close" onclick="closeEndingModal()">Tutup</button>
     </div>
   </div>
+
+  <!-- ELEMENT DRAGGING FLOATING -->
+  <div id="drag-ghost" class="dragging-item" style="display: none;"></div>
 
 <script>
 // Web Audio API Synthesizer
@@ -312,7 +361,7 @@ const BADGES = {
   16: { icon: "💎", name: "Mahakarya Seni", desc: "Mencapai nilai seni tertinggi." },
   17: { icon: "🏛️", name: "Pilar Galeri", desc: "Menjadi pilar utama keberhasilan." },
   18: { icon: "🌌", name: "Penjelajah Galaksi", desc: "Mencapai puncak popularitas." },
-  19: { icon: "🕊️", name: "Penyembuh Jiwa", desc: "Kehangatan mengisi galeri." },
+  19: { icon: "🕊️️", name: "Penyembuh Jiwa", desc: "Kehangatan mengisi galeri." },
   20: { icon: "👼", name: "Sahabat Malaikat", desc: "Berkah Malaikat menyertaimu." },
   21: { icon: "🔑", name: "Kunci Terakhir", desc: "Satu langkah menuju pesan rahasia!" },
   22: { icon: "💌", name: "Lencana Pamungkas", desc: "Pesan Rahasia Terbuka! Game Tamat." }
@@ -334,12 +383,15 @@ let state = {
   }
 };
 
+let dragSourceIdx = null;
+
 function init() {
   loadGame();
   regenEnergy();
   if (state.orders.length === 0) generateNewRound();
   checkAngelNPC();
   renderUI();
+  setupGlobalDragEvents();
   setInterval(() => { regenEnergy(); renderStats(); }, 1000);
 }
 
@@ -405,6 +457,31 @@ function getNPCDialogText(npcName, items) {
   return "Pesanan khusus untuk galeri...";
 }
 
+// LOGIKA TAP / MERGE / SWAP
+function performMergeOrSwap(srcIdx, destIdx) {
+  if (srcIdx === destIdx) return;
+  let src = state.board[srcIdx];
+  let dest = state.board[destIdx];
+
+  if (!src) return;
+
+  // Cek Merge Item Biasa
+  if (src && dest && !src.isGenerator && !src.isGift && !dest.isGenerator && !dest.isGift &&
+      src.category === dest.category && src.level === dest.level && src.level < 8) {
+    state.board[destIdx] = { isGenerator: false, category: src.category, level: src.level + 1 };
+    state.board[srcIdx] = null;
+    playSFX('merge'); checkAngelNPC();
+  } else {
+    // Swap Posisi
+    state.board[destIdx] = src;
+    state.board[srcIdx] = dest;
+    playSFX('tap');
+  }
+
+  state.selectedIndex = null;
+  saveGame(); renderUI();
+}
+
 function handleTileClick(idx) {
   initAudio();
   const item = state.board[idx];
@@ -422,20 +499,47 @@ function handleTileClick(idx) {
   if (state.selectedIndex === null) {
     if (item) { state.selectedIndex = idx; playSFX('tap'); }
   } else {
-    let pIdx = state.selectedIndex;
-    let pItem = state.board[pIdx];
-
-    if (pIdx === idx) { state.selectedIndex = null; }
-    else if (pItem && item && pItem.category === item.category && pItem.level === item.level && pItem.level < 8) {
-      state.board[idx] = { isGenerator: false, category: pItem.category, level: pItem.level + 1 };
-      state.board[pIdx] = null; state.selectedIndex = null;
-      playSFX('merge'); checkAngelNPC(); saveGame(); renderUI();
-    } else {
-      state.board[idx] = pItem; state.board[pIdx] = item;
-      state.selectedIndex = null; playSFX('tap'); saveGame(); renderUI();
-    }
+    performMergeOrSwap(state.selectedIndex, idx);
   }
   renderUI();
+}
+
+// DRAG & DROP SYSTEM (TOUCH & MOUSE)
+function setupGlobalDragEvents() {
+  const ghost = document.getElementById("drag-ghost");
+
+  window.addEventListener("pointermove", (e) => {
+    if (dragSourceIdx !== null) {
+      ghost.style.left = e.clientX + "px";
+      ghost.style.top = e.clientY + "px";
+    }
+  });
+
+  window.addEventListener("pointerup", (e) => {
+    if (dragSourceIdx !== null) {
+      ghost.style.display = "none";
+      let targetEl = document.elementFromPoint(e.clientX, e.clientY);
+      let tileEl = targetEl ? targetEl.closest(".tile") : null;
+
+      if (tileEl && tileEl.dataset.index !== undefined) {
+        let destIdx = parseInt(tileEl.dataset.index);
+        performMergeOrSwap(dragSourceIdx, destIdx);
+      }
+      dragSourceIdx = null;
+    }
+  });
+}
+
+function startDrag(e, idx) {
+  let item = state.board[idx];
+  if (!item || item.isGenerator || item.isGift) return;
+
+  dragSourceIdx = idx;
+  const ghost = document.getElementById("drag-ghost");
+  ghost.innerText = CHAINS[item.category][item.level - 1];
+  ghost.style.left = e.clientX + "px";
+  ghost.style.top = e.clientY + "px";
+  ghost.style.display = "flex";
 }
 
 function spawnItem(cat) {
@@ -534,6 +638,30 @@ function showBadgeModal(lvl) {
 }
 function closeBadgeModal() { document.getElementById("badge-modal").style.display = "none"; }
 
+function openGalleryModal() {
+  const container = document.getElementById("gallery-list");
+  container.innerHTML = "";
+  let unlockedCount = 0;
+
+  for (let i = 1; i <= 22; i++) {
+    let b = BADGES[i];
+    let isUnlocked = state.level >= i;
+    if (isUnlocked) unlockedCount++;
+
+    const item = document.createElement("div");
+    item.className = "badge-item " + (isUnlocked ? "unlocked" : "");
+    item.innerHTML = `
+      <div class="badge-item-icon">${isUnlocked ? b.icon : "🔒"}</div>
+      <div style="font-size: 9px;">${isUnlocked ? b.name : "Level " + i}</div>
+    `;
+    container.appendChild(item);
+  }
+
+  document.getElementById("gallery-progress").innerText = `${unlockedCount}/22 Terkumpul`;
+  document.getElementById("gallery-modal").style.display = "flex";
+}
+function closeGalleryModal() { document.getElementById("gallery-modal").style.display = "none"; }
+
 function showEndingModal() { document.getElementById("ending-modal").style.display = "flex"; }
 function closeEndingModal() { document.getElementById("ending-modal").style.display = "none"; }
 
@@ -583,6 +711,7 @@ function renderBoard() {
   state.board.forEach((slot, idx) => {
     const tile = document.createElement("div");
     tile.className = "tile";
+    tile.dataset.index = idx;
 
     if (slot) {
       if (slot.isGift) { tile.className += " gift"; tile.innerText = "🎁"; }
@@ -595,7 +724,10 @@ function renderBoard() {
     }
 
     if (state.selectedIndex === idx) tile.className += " selected";
+    
     tile.onclick = () => handleTileClick(idx);
+    tile.onpointerdown = (e) => startDrag(e, idx);
+
     boardEl.appendChild(tile);
   });
 }
