@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Merge Astra Reyen</title>
+  <style>
+    :root {
+      --bg: #f4efe9;
+      --card: #ffffff;
+      --primary: #7d52a8;
+      --accent: #f39c12;
+      --danger: #e74c3c;
+    }
+    * { box-sizing: border-box; touch-action: manipulation; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      margin: 0; padding: 10px;
+      display: flex; flex-direction: column; align-items: center;
+      color: #2c3e50; user-select: none;
+    }
+    header {
+      width: 100%; max-width: 380px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px;
+    }
+    h1 { margin: 0; font-size: 18px; color: #34495e; }
+    .audio-btn {
+      background: #e0d7ce; border: none; padding: 5px 10px;
+      border-radius: 15px; font-size: 12px; cursor: pointer; font-weight: bold;
+    }
+
+    /* Top Stats Bar */
+    .stats-bar {
+      width: 100%; max-width: 380px; display: flex;
+      justify-content: space-around; background: var(--card);
+      padding: 8px 10px; border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 8px;
+    }
+    .stat { font-weight: bold; font-size: 12px; display: flex; align-items: center; gap: 4px; }
+
+    /* Orders Area */
+    .orders-container {
+      width: 100%; max-width: 380px; background: var(--card);
+      padding: 10px; border-radius: 16px; margin-bottom: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .orders-header { font-size: 11px; font-weight: bold; color: #7f8c8d; margin-bottom: 6px; }
+    .order-card {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #faf8f5; border: 1px solid #e8e2d9;
+      padding: 8px 10px; border-radius: 12px; margin-bottom: 6px; gap: 8px;
+    }
+    .order-card.angel { background: #fffde7; border-color: #fbc02d; }
+    
+    /* NPC Profile & Bubble Chat */
+    .npc-profile {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 2px solid #8e44ad; overflow: hidden;
+      flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+      background: #eee;
+    }
+    .npc-profile img { width: 100%; height: 100%; object-fit: cover; }
+    .order-card.angel .npc-profile {
+      border-color: #f1c40f; box-shadow: 0 0 8px rgba(241, 196, 15, 0.6);
+    }
+    .order-info { flex-grow: 1; display: flex; flex-direction: column; gap: 2px; }
+    .npc-dialog {
+      font-size: 10px; font-style: italic; color: #555;
+      background: #eee6f6; padding: 2px 6px; border-radius: 6px;
+      border-left: 3px solid var(--primary); margin-bottom: 2px;
+    }
+    .order-card.angel .npc-dialog { background: #fff8d1; border-left-color: #f39c12; }
+    .order-npc { font-weight: bold; font-size: 11px; color: #2c3e50; }
+    .order-items { font-size: 16px; letter-spacing: 1px; }
+    .order-rewards { font-size: 10px; font-weight: bold; color: #8e44ad; }
+    
+    .btn-deliver {
+      background: #27ae60; color: white; border: none;
+      padding: 6px 10px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    /* Board Area */
+    .board-container {
+      display: grid; gap: 4px; background: #dcd0c0;
+      padding: 6px; border-radius: 14px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.1); margin-bottom: 8px;
+    }
+    .tile {
+      width: 44px; height: 44px; background: #fcfbfa;
+      border-radius: 8px; display: flex; align-items: center;
+      justify-content: center; font-size: 22px; cursor: pointer;
+      position: relative; border: 2px solid transparent;
+    }
+    .tile.selected { border-color: var(--primary) !important; background: #f0e6fa; }
+    .tile.generator { background: #fff8e1; border-color: #f39c12; }
+    .tile.gift { background: #e8f8f5; border: 2px dashed #1abc9c; animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    /* Action Controls */
+    .action-bar { width: 100%; max-width: 380px; display: flex; justify-content: flex-end; }
+    .btn-delete {
+      background: var(--danger); color: white; border: none;
+      padding: 8px 14px; border-radius: 10px; font-weight: bold; font-size: 11px;
+      display: flex; align-items: center; gap: 4px; cursor: pointer;
+      opacity: 0.5; pointer-events: none; transition: 0.2s;
+    }
+    .btn-delete.active { opacity: 1; pointer-events: auto; }
+
+    /* Modals & Stamps */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); z-index: 100;
+      align-items: center; justify-content: center; flex-direction: column;
+    }
+    .modal-card {
+      background: white; padding: 20px; border-radius: 18px; text-align: center;
+      max-width: 300px; width: 90%; display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .stamp-badge {
+      width: 130px; height: 130px; border-radius: 50%;
+      border: 6px double #f1c40f; background: #fffdf5;
+      box-shadow: 0 0 20px rgba(241, 196, 15, 0.6);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      animation: stampAnim 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .stamp-icon { font-size: 44px; }
+    .stamp-title { font-size: 11px; font-weight: bold; color: #d35400; text-align: center; margin-top: 4px; padding: 0 4px; }
+    
+    @keyframes stampAnim {
+      0% { transform: scale(3); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .btn-close {
+      background: var(--primary); color: white; border: none;
+      padding: 8px 18px; border-radius: 10px; font-weight: bold; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🏰 Merge Astra Reyen</h1>
+    <button id="btn-audio" class="audio-btn" onclick="toggleAudio()">🔊 Suara: ON</button>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat">🎖️ Lv: <span id="val-level">1</span>/22</div>
+    <div class="stat">✨ XP: <span id="val-xp">0</span>/<span id="val-max-xp">30</span></div>
+    <div class="stat">⚡ Energi: <span id="val-energy">100</span>/100</div>
+  </div>
+
+  <div class="orders-container">
+    <div class="orders-header">📋 Babak Pesanan (<span id="completed-count">0</span>/5 Selesai)</div>
+    <div id="orders-list"></div>
+  </div>
+
+  <div id="board" class="board-container"></div>
+
+  <div class="action-bar">
+    <button id="btn-delete" class="btn-delete" onclick="deleteSelectedItem()">🗑️ Hapus Item</button>
+  </div>
+
+  <!-- POPUP STEMPEL LENCANA -->
+  <div id="badge-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="margin: 0; color: #2c3e50;">✨ NAIK LEVEL! ✨</h3>
+      <div class="stamp-badge">
+        <div id="stamp-icon" class="stamp-icon">🧹</div>
+        <div id="stamp-title" class="stamp-title">Pemula Galeri</div>
+      </div>
+      <p id="badge-desc" style="font-size: 11px; color: #7f8c8d; margin: 0;"></p>
+      <button class="btn-close" onclick="closeBadgeModal()">Lanjutkan</button>
+    </div>
+  </div>
+
+  <!-- POPUP PESAN RAHASIA ENDING -->
+  <div id="ending-modal" class="modal-overlay">
+    <div class="modal-card" style="border: 3px solid #f1c40f;">
+      <h2 style="margin: 0; color: #d35400;">💌 PESAN RAHASIA 💌</h2>
+      <p style="font-size: 12px; color: #2c3e50; line-height: 1.5;" id="ending-text">
+        Selamat Baginda Raja! Seluruh 22 Lencana Galeri telah terkumpul. Terima kasih telah menghidupkan kembali kisah Astra, Reyen, Teri, Kili, dan Semesta!
+      </p>
+      <button class="btn-close" onclick="closeEndingModal()">Tutup</button>
+    </div>
+  </div>
+
+<script>
+// Web Audio API Synthesizer
+let audioCtx = null;
+let audioEnabled = true;
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playTone(freq, type, duration) {
+  if (!audioEnabled || !audioCtx) return;
+  try {
+    let osc = audioCtx.createOscillator();
+    let gain = audioCtx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+    osc.stop(audioCtx.currentTime + duration);
+  } catch(e){}
+}
+
+function playSFX(type) {
+  initAudio();
+  if (type === 'tap') playTone(400, 'sine', 0.08);
+  else if (type === 'merge') { playTone(523, 'sine', 0.1); setTimeout(() => playTone(659, 'sine', 0.15), 60); }
+  else if (type === 'deliver') { playTone(587, 'triangle', 0.1); setTimeout(() => playTone(880, 'triangle', 0.2), 100); }
+  else if (type === 'stamp') { playTone(150, 'square', 0.2); setTimeout(() => playTone(440, 'sine', 0.3), 100); }
+  else if (type === 'delete') playTone(200, 'sawtooth', 0.15);
+}
+
+function toggleAudio() {
+  audioEnabled = !audioEnabled;
+  document.getElementById("btn-audio").innerText = audioEnabled ? "🔊 Suara: ON" : "🔇 Suara: OFF";
+}
+
+// Game Data
+const MAX_ENERGY = 100;
+const REGEN_TIME_MS = 30 * 1000;
+
+const CHAINS = {
+  bakery: ["🌾","🍞","🥐","🥯","🧁","🍩","🍰","🎂"],
+  coffee: ["🫘","☕","🧊","🧋","🍵","🍹","🍷","🍾"],
+  japanese: ["🫛","🍙","🍤","🍡","🥟","🍣","🍜","🍱"],
+  ocean: ["🐚","🪼","🦐","🦀","🦑","🐙","🦈","🐋"],
+  garden: ["🌱","🪴","🌵","🌷","🪻","🌻","🌹","💐"]
+};
+
+const GEN_ICONS = { bakery: "👨‍🍳", coffee: "🫖", japanese: "🍳", ocean: "🫧", garden: "👩‍🌾" };
+const NPC_LIST = [
+  { name: "Astra", avatar: "astra.png" }, { name: "Reyen", avatar: "reyen.png" },
+  { name: "Teri", avatar: "teri.png" }, { name: "Kili", avatar: "kili.png" },
+  { name: "Semesta", avatar: "semesta.png" }
+];
+
+const NPC_DIALOGS = {
+  Astra: {
+    bakery: "Bumi masa lalu punya Karbohidrat? Mau coba!",
+    coffee: "Cairan hitam ini energi mesin waktu bukan ya?",
+    japanese: "Mata sensor ku mendeteksi makanan enak di sini!",
+    ocean: "Di abad 30 laut sudah kering, mumpung ada mau!",
+    garden: "Objek hijau organik! Aku butuh ini untuk sampel!"
+  },
+  Reyen: {
+    bakery: "Lapar nih, pengen mengunyah roti ala rockstar!",
+    coffee: "Bikin kopi dulu bro, biar gaya pas konser!",
+    japanese: "Gaya dulu nomor satu, tapi perut butuh makan!",
+    ocean: "Cuaca bagus nih, pengen suasana pantai rockstar!",
+    garden: "Pengen bunga cantik buat dilempar ke penonton!"
+  },
+  Teri: {
+    bakery: "Lapar deh, ingin makan roti enak!",
+    coffee: "Haus nih, mau minuman dingin sruput!",
+    japanese: "Nyam nyam! Teri mau maem yang ini!",
+    ocean: "Lagi ingin main air dan lihat ikan!",
+    garden: "Pohonnya lucu, Teri mau main di sana!"
+  },
+  Kili: {
+    bakery: "Mau camilan manis dong, Kili lapar...",
+    coffee: "Pengen minum yang segar-segar!",
+    japanese: "Bentuknya imut, Kili ingin makan!",
+    ocean: "Lihat gelembung! Kili mau main!",
+    garden: "Bunganya wangi, Kili pengen petik!"
+  },
+  Semesta: {
+    bakery: "Tiba-tiba perutku mengeluarkan suara misterius, butuh ini!",
+    coffee: "Aku butuh ramuan ini untuk menghubungi alien!",
+    japanese: "Bau apa ini? Jiwa gaibku tergiur!",
+    ocean: "Lagi pengen jadi duyung, kirimkan ini!",
+    garden: "Tanaman ini akan kujadikan mahkota keagunganku!"
+  },
+  Malaikat: {
+    default: "Serahkan 3 benda ajaib ini untuk berkah agung!"
+  }
+};
+
+const XP_REQUIREMENTS = {
+  1: 30, 2: 50, 3: 80, 4: 120, 5: 170, 6: 230, 7: 300, 8: 380, 9: 470, 10: 560,
+  11: 650, 12: 740, 13: 820, 14: 890, 15: 940, 16: 970, 17: 990, 18: 1000, 19: 1000, 20: 1000, 21: 1000
+};
+
+const BADGES = {
+  1: { icon: "🧹", name: "Pemula Galeri", desc: "Awal perjalanan membersihkan galeri." },
+  2: { icon: "☕", name: "Penyeduh Perdana", desc: "Membuka Teko Kopi dari Kotak Kado!" },
+  3: { icon: "🎨", name: "Sahabat Reyen", desc: "Membantu lukisan pertama Reyen." },
+  4: { icon: "🏮", name: "Kolektor Astra", desc: "Membuka Kedai Jepang dari Kado!" },
+  5: { icon: "👶", name: "Teman Main Teri", desc: "Membuat Teri tersenyum riang." },
+  6: { icon: "🫧", name: "Ceria Bersama Kili", desc: "Membuka Mesin Laut dari Kado!" },
+  7: { icon: "🐱", name: "Pengembara Semesta", desc: "Menjawab teka-teki meme Semesta." },
+  8: { icon: "🏠", name: "Koki Pastri", desc: "Membuka Kebun Tanaman dari Kado!" },
+  9: { icon: "🧋", name: "Penyegar Suasana", desc: "Papan meluas ke ukuran maksimal 7x9!" },
+  10: { icon: "🍣", name: "Ahli Cita Rasa", desc: "Menguasai kuliner galeri." },
+  11: { icon: "🪼", name: "Penyelam Samudra", desc: "Menemukan keajaiban laut." },
+  12: { icon: "🌻", name: "Penjaga Taman", desc: "Taman galeri mekar sempurna." },
+  13: { icon: "🎭", name: "Meme Master", desc: "Semesta mengakui kehebatanmu." },
+  14: { icon: "👑", name: "Bintang Galeri", desc: "Galeri makin dikenal luas." },
+  15: { icon: "📜", name: "Pencari Jejak", desc: "Menemukan dokumen tua Astra." },
+  16: { icon: "💎", name: "Mahakarya Seni", desc: "Mencapai nilai seni tertinggi." },
+  17: { icon: "🏛️", name: "Pilar Galeri", desc: "Menjadi pilar utama keberhasilan." },
+  18: { icon: "🌌", name: "Penjelajah Galaksi", desc: "Mencapai puncak popularitas." },
+  19: { icon: "🕊️", name: "Penyembuh Jiwa", desc: "Kehangatan mengisi galeri." },
+  20: { icon: "👼", name: "Sahabat Malaikat", desc: "Berkah Malaikat menyertaimu." },
+  21: { icon: "🔑", name: "Kunci Terakhir", desc: "Satu langkah menuju pesan rahasia!" },
+  22: { icon: "💌", name: "Lencana Pamungkas", desc: "Pesan Rahasia Terbuka! Game Tamat." }
+};
+
+const GRID_CONFIGS = {
+  1: { cols: 3, rows: 5 }, 2: { cols: 3, rows: 6 }, 3: { cols: 4, rows: 6 },
+  4: { cols: 4, rows: 7 }, 5: { cols: 5, rows: 7 }, 6: { cols: 5, rows: 8 },
+  7: { cols: 6, rows: 8 }, 8: { cols: 6, rows: 9 }, 9: { cols: 7, rows: 9 }
+};
+
+let state = {
+  level: 1, xp: 0, energy: 100, lastEnergyUpdate: Date.now(),
+  board: [], orders: [], completedOrdersCount: 0, selectedIndex: null,
+  generators: {
+    bakery: { unlocked: true }, coffee: { unlocked: false },
+    japanese: { unlocked: false }, ocean: { unlocked: false },
+    garden: { unlocked: false }
+  }
+};
+
+function init() {
+  loadGame();
+  regenEnergy();
+  if (state.orders.length === 0) generateNewRound();
+  checkAngelNPC();
+  renderUI();
+  setInterval(() => { regenEnergy(); renderStats(); }, 1000);
+}
+
+function regenEnergy() {
+  const now = Date.now();
+  const timePassed = now - state.lastEnergyUpdate;
+  if (state.energy < MAX_ENERGY) {
+    const gained = Math.floor(timePassed / REGEN_TIME_MS);
+    if (gained > 0) {
+      state.energy = Math.min(MAX_ENERGY, state.energy + gained);
+      state.lastEnergyUpdate = now - (timePassed % REGEN_TIME_MS);
+      saveGame();
+    }
+  } else { state.lastEnergyUpdate = now; }
+}
+
+function createEmptyBoard() {
+  const cfg = GRID_CONFIGS[Math.min(state.level, 9)];
+  state.board = Array(cfg.cols * cfg.rows).fill(null);
+  state.board[0] = { isGenerator: true, category: "bakery" };
+}
+
+function calcOrderRewards(items) {
+  let totalXP = 0, totalEnergy = 0;
+  const xpTable = [2, 5, 10, 20, 35, 60, 100, 160];
+  const energyTable = [1, 2, 4, 8, 15, 25, 40, 60];
+  items.forEach(item => {
+    let lvlIdx = item.level - 1;
+    totalXP += xpTable[lvlIdx] || 2;
+    totalEnergy += energyTable[lvlIdx] || 1;
+  });
+  return { rewardXP: totalXP, rewardEnergy: totalEnergy };
+}
+
+function generateNewRound() {
+  state.orders = []; state.completedOrdersCount = 0;
+  let availCats = Object.keys(state.generators).filter(k => state.generators[k].unlocked);
+
+  for (let i = 0; i < 5; i++) {
+    const npc = NPC_LIST[Math.floor(Math.random() * NPC_LIST.length)];
+    const count = Math.floor(Math.random() * 3) + 1;
+    let reqs = [];
+    for (let j = 0; j < count; j++) {
+      let c = availCats[Math.floor(Math.random() * availCats.length)];
+      let lvl = Math.floor(Math.random() * 3) + 1;
+      reqs.push({ category: c, level: lvl, icon: CHAINS[c][lvl - 1] });
+    }
+    let rewards = calcOrderRewards(reqs);
+    state.orders.push({
+      id: "ord_" + i, npc: npc.name, avatar: npc.avatar, items: reqs,
+      rewardXP: rewards.rewardXP, rewardEnergy: rewards.rewardEnergy, isCompleted: false
+    });
+  }
+  saveGame();
+}
+
+function getNPCDialogText(npcName, items) {
+  if (npcName === "Malaikat") return NPC_DIALOGS.Malaikat.default;
+  let mainCat = items[0] ? items[0].category : "bakery";
+  if (NPC_DIALOGS[npcName] && NPC_DIALOGS[npcName][mainCat]) {
+    return NPC_DIALOGS[npcName][mainCat];
+  }
+  return "Pesanan khusus untuk galeri...";
+}
+
+function handleTileClick(idx) {
+  initAudio();
+  const item = state.board[idx];
+
+  if (item && item.isGift) {
+    state.board[idx] = { isGenerator: true, category: item.unlockCat };
+    state.generators[item.unlockCat].unlocked = true;
+    playSFX('stamp'); saveGame(); renderUI(); return;
+  }
+
+  if (item && item.isGenerator) {
+    playSFX('tap'); spawnItem(item.category); return;
+  }
+
+  if (state.selectedIndex === null) {
+    if (item) { state.selectedIndex = idx; playSFX('tap'); }
+  } else {
+    let pIdx = state.selectedIndex;
+    let pItem = state.board[pIdx];
+
+    if (pIdx === idx) { state.selectedIndex = null; }
+    else if (pItem && item && pItem.category === item.category && pItem.level === item.level && pItem.level < 8) {
+      state.board[idx] = { isGenerator: false, category: pItem.category, level: pItem.level + 1 };
+      state.board[pIdx] = null; state.selectedIndex = null;
+      playSFX('merge'); checkAngelNPC(); saveGame(); renderUI();
+    } else {
+      state.board[idx] = pItem; state.board[pIdx] = item;
+      state.selectedIndex = null; playSFX('tap'); saveGame(); renderUI();
+    }
+  }
+  renderUI();
+}
+
+function spawnItem(cat) {
+  if (state.energy < 1) { alert("Energi habis! Tunggu terisi kembali."); return; }
+  let emptyIdx = state.board.findIndex(s => s === null);
+  if (emptyIdx === -1) { alert("Papan penuh! Hapus item atau lakukan merge terlebih dahulu."); return; }
+
+  state.energy -= 1;
+  state.board[emptyIdx] = { isGenerator: false, category: cat, level: 1 };
+  saveGame(); renderUI();
+}
+
+function deleteSelectedItem() {
+  if (state.selectedIndex !== null) {
+    let item = state.board[state.selectedIndex];
+    if (item && !item.isGenerator && !item.isGift) {
+      state.board[state.selectedIndex] = null;
+      state.selectedIndex = null;
+      playSFX('delete'); saveGame(); renderUI();
+    }
+  }
+}
+
+function deliverOrder(idx) {
+  let ord = state.orders[idx];
+  let tempBoard = [...state.board];
+  let found = [];
+
+  for (let req of ord.items) {
+    let i = tempBoard.findIndex(s => s && !s.isGenerator && !s.isGift && s.category === req.category && s.level === req.level);
+    if (i !== -1) { found.push(i); tempBoard[i] = null; }
+    else { alert("Item belum lengkap di papan!"); return; }
+  }
+
+  found.forEach(i => state.board[i] = null);
+  ord.isCompleted = true;
+  if (!ord.isAngel) state.completedOrdersCount++;
+
+  state.energy = Math.min(MAX_ENERGY, state.energy + ord.rewardEnergy);
+  playSFX('deliver');
+  addXP(ord.rewardXP);
+
+  if (state.completedOrdersCount >= 5) generateNewRound();
+  saveGame(); renderUI();
+}
+
+function addXP(amount) {
+  state.xp += amount;
+  let maxXP = XP_REQUIREMENTS[state.level] || 1000;
+
+  if (state.xp >= maxXP) {
+    state.level += 1; state.xp -= maxXP;
+
+    const cfg = GRID_CONFIGS[Math.min(state.level, 9)];
+    let newBoard = Array(cfg.cols * cfg.rows).fill(null);
+    for (let i = 0; i < state.board.length; i++) {
+      if (i < newBoard.length) newBoard[i] = state.board[i];
+    }
+    state.board = newBoard;
+
+    let giftMap = { 2: "coffee", 4: "japanese", 6: "ocean", 8: "garden" };
+    if (giftMap[state.level]) {
+      let emptyIdx = state.board.findIndex(s => s === null);
+      if (emptyIdx !== -1) state.board[emptyIdx] = { isGift: true, unlockCat: giftMap[state.level] };
+    }
+
+    playSFX('stamp');
+    showBadgeModal(state.level);
+    if (state.level === 22) showEndingModal();
+  }
+}
+
+function checkAngelNPC() {
+  let lvl8Items = state.board.filter(s => s && !s.isGenerator && !s.isGift && s.level === 8);
+  let hasAngel = state.orders.some(o => o.isAngel && !o.isCompleted);
+
+  if (lvl8Items.length >= 3 && !hasAngel) {
+    state.orders.unshift({
+      id: "angel_sp", isAngel: true, npc: "Malaikat", avatar: "malaikat.png",
+      items: [
+        { category: lvl8Items[0].category, level: 8, icon: CHAINS[lvl8Items[0].category][7] },
+        { category: lvl8Items[1].category, level: 8, icon: CHAINS[lvl8Items[1].category][7] },
+        { category: lvl8Items[2].category, level: 8, icon: CHAINS[lvl8Items[2].category][7] }
+      ],
+      rewardXP: 300, rewardEnergy: 100, isCompleted: false
+    });
+  }
+}
+
+function showBadgeModal(lvl) {
+  let badge = BADGES[Math.min(lvl, 22)];
+  document.getElementById("stamp-icon").innerText = badge.icon;
+  document.getElementById("stamp-title").innerText = badge.name;
+  document.getElementById("badge-desc").innerText = badge.desc;
+  document.getElementById("badge-modal").style.display = "flex";
+}
+function closeBadgeModal() { document.getElementById("badge-modal").style.display = "none"; }
+
+function showEndingModal() { document.getElementById("ending-modal").style.display = "flex"; }
+function closeEndingModal() { document.getElementById("ending-modal").style.display = "none"; }
+
+function renderUI() { renderStats(); renderOrders(); renderBoard(); renderActionBar(); }
+
+function renderStats() {
+  document.getElementById("val-level").innerText = state.level;
+  document.getElementById("val-xp").innerText = state.xp;
+  document.getElementById("val-max-xp").innerText = XP_REQUIREMENTS[state.level] || 1000;
+  document.getElementById("val-energy").innerText = state.energy;
+  document.getElementById("completed-count").innerText = state.completedOrdersCount;
+}
+
+function renderOrders() {
+  const container = document.getElementById("orders-list");
+  container.innerHTML = "";
+  state.orders.forEach((ord, idx) => {
+    if (ord.isCompleted) return;
+    
+    let dialogText = getNPCDialogText(ord.npc, ord.items);
+    let avatarSrc = ord.avatar || "semesta.png";
+
+    const card = document.createElement("div");
+    card.className = "order-card " + (ord.isAngel ? "angel" : "");
+    card.innerHTML = `
+      <div class="npc-profile">
+        <img src="${avatarSrc}" alt="${ord.npc}" onerror="this.src='https://via.placeholder.com/44?text=NPC'">
+      </div>
+      <div class="order-info">
+        <div class="npc-dialog">💬 "${dialogText}"</div>
+        <div class="order-npc">${ord.npc}</div>
+        <div class="order-items">${ord.items.map(i => i.icon).join(" ")}</div>
+        <div class="order-rewards">✨ +${ord.rewardXP} XP | ⚡ +${ord.rewardEnergy} Energi</div>
+      </div>
+      <button class="btn-deliver" onclick="deliverOrder(${idx})">Kirim</button>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderBoard() {
+  const boardEl = document.getElementById("board");
+  const cfg = GRID_CONFIGS[Math.min(state.level, 9)];
+  boardEl.style.gridTemplateColumns = `repeat(${cfg.cols}, 44px)`;
+  boardEl.innerHTML = "";
+
+  state.board.forEach((slot, idx) => {
+    const tile = document.createElement("div");
+    tile.className = "tile";
+
+    if (slot) {
+      if (slot.isGift) { tile.className += " gift"; tile.innerText = "🎁"; }
+      else if (slot.isGenerator) {
+        tile.className += " generator";
+        tile.innerText = GEN_ICONS[slot.category];
+      } else {
+        tile.innerText = CHAINS[slot.category][slot.level - 1];
+      }
+    }
+
+    if (state.selectedIndex === idx) tile.className += " selected";
+    tile.onclick = () => handleTileClick(idx);
+    boardEl.appendChild(tile);
+  });
+}
+
+function renderActionBar() {
+  const btnDel = document.getElementById("btn-delete");
+  if (state.selectedIndex !== null) {
+    let item = state.board[state.selectedIndex];
+    if (item && !item.isGenerator && !item.isGift) {
+      btnDel.classList.add("active"); return;
+    }
+  }
+  btnDel.classList.remove("active");
+}
+
+function saveGame() { localStorage.setItem("mergeGameBagindaSave", JSON.stringify(state)); }
+function loadGame() {
+  const saved = localStorage.getItem("mergeGameBagindaSave");
+  if (saved) state = JSON.parse(saved);
+  else createEmptyBoard();
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
